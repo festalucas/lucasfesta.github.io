@@ -1,3 +1,27 @@
+const SUPABASE_URL =
+"https://jvizawmhqlwnonsdztfz.supabase.co";
+
+const SUPABASE_KEY =
+"AeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2aXphd21ocWx3bm9uc2R6dGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTk2OTQsImV4cCI6MjA5NjIzNTY5NH0.qAJ4W0mKmOvFMEJxNm6zG4dD2MnuToOXm2QJFKUaTQs";
+async function probarConexion(){
+
+    const { data, error } =
+    await supabase
+        .from("reparaciones")
+        .select("*");
+
+    console.log("DATOS:", data);
+    console.log("ERROR:", error);
+}
+
+
+
+const supabase =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+probarConexion();
 let contadorOT = 1;
 let contadorCliente = 1;
 let reparaciones = [];
@@ -12,7 +36,9 @@ function mostrarSeccion(id){
     });
 
     document.getElementById(id).style.display = 'block';
-
+    if(id === "economia"){
+    actualizarEconomia();
+    }
     if(id === "ingreso"){
         actualizarNumeroOT();
     }
@@ -79,6 +105,9 @@ if(!clienteExistente){
     ubicacion: document.getElementById("ubicacion").value,
 
     estado: "Ingresado",
+    
+    fechaIngreso: new Date().toISOString(),
+    fechaEntrega: null,
 
     tecnico: "Lucas",
 
@@ -128,17 +157,59 @@ function actualizarTablaReparaciones(){
 
     tbody.innerHTML = "";
 
+    let filtro =
+        document.getElementById("filtroEstado")?.value
+        || "Todos";
+        let busqueda =
+(
+    document.getElementById(
+        "busquedaReparacion"
+    )?.value || ""
+)
+.toLowerCase();
+
     reparaciones.forEach(function(orden){
 
+        if(
+            filtro !== "Todos" &&
+            orden.estado !== filtro
+        ){
+            return;
+        }
+        if(
+
+    !orden.numero
+        .toLowerCase()
+        .includes(busqueda)
+
+    &&
+
+    !orden.cliente
+        .toLowerCase()
+        .includes(busqueda)
+
+    &&
+
+    !orden.producto
+        .toLowerCase()
+        .includes(busqueda)
+
+){
+    return;
+}
+
         tbody.innerHTML += `
-           <tr onclick="verDetalle('${orden.numero}')">
-    <td>${orden.numero}</td>
-    <td>${orden.cliente}</td>
-    <td>${orden.producto}</td>
-    <td>${orden.estado}</td>
-</tr>
+            <tr onclick="verDetalle('${orden.numero}')">
+                <td>${orden.numero}</td>
+                <td>${orden.cliente}</td>
+                <td>${orden.producto}</td>
+                <td>${orden.estado}</td>
+            </tr>
         `;
+
     });
+
+
 }
 function verDetalle(numeroOrden){
 
@@ -157,6 +228,29 @@ function verDetalle(numeroOrden){
         <p><strong>Dirección:</strong> ${orden.direccion}</p>
 
         <hr>
+
+        <p><strong>Fecha ingreso:</strong>
+    ${formatearFecha(orden.fechaIngreso || orden.fecha)}
+    </p>
+
+    <p><strong>Fecha entrega:</strong>
+    ${
+        orden.fechaEntrega
+        ? formatearFecha(orden.fechaEntrega)
+        : "Pendiente"
+    }
+    </p>
+    <p><strong>Días en taller:</strong>
+    ${
+    orden.fechaEntrega
+    ? calcularDias(
+        orden.fechaIngreso || orden.fecha,
+        orden.fechaEntrega
+      ) + " días"
+    : "En proceso"
+    }
+</p>
+    <hr> 
 
         <p><strong>Producto:</strong> ${orden.producto}</p>
 
@@ -231,6 +325,7 @@ function verDetalle(numeroOrden){
             id="gastos"
             value="${orden.gastos || null}"
         >
+        
 
         <br><br>
 
@@ -264,7 +359,25 @@ function verDetalle(numeroOrden){
             >
 
         </div>
+    <h3>Resumen Económico</h3>
 
+    <p>
+        <strong>Ganancia:</strong>
+        $${(
+            (orden.valorReparacion || 0)
+            -
+            (orden.gastos || 0)
+        )}
+    </p>
+
+    <p>
+        <strong>Total Cobrado:</strong>
+        $${(
+            (orden.valorReparacion || 0)
+            +
+            (orden.valorTransporte || 0)
+        )}
+    </p>
         <hr>
 
         <button
@@ -314,6 +427,15 @@ function cargarDatos(){
         reparaciones =
             JSON.parse(datosReparaciones);
 
+          reparaciones.forEach(function(orden){
+
+    if(!orden.fecha){
+
+        orden.fecha = new Date().toISOString();
+
+    }
+
+});
         actualizarTablaReparaciones();
 
         contadorOT = reparaciones.length + 1;
@@ -363,7 +485,7 @@ function actualizarTablaClientes(){
                 <td>${cliente.telefono}</td>
                 <td>
                     <button onclick="infoCliente(${cliente.id})">
-                        In
+                        Info
                     </button>
                 </td>
             </tr>
@@ -542,7 +664,6 @@ function guardarCliente(id){
 
     actualizarTablaClientes();
 
-    alert("Cliente actualizado");
 }
 cargarDatos();
 mostrarSeccion("ingreso");
@@ -651,10 +772,20 @@ function guardarDetalle(numeroOrden){
             o => o.numero === numeroOrden
         );
 
-    orden.estado =
+    let nuevoEstado =
         document.getElementById(
             "estadoOrden"
         ).value;
+
+    if(
+        orden.estado !== "Entregado" &&
+        nuevoEstado === "Entregado"
+    ){
+        orden.fechaEntrega =
+            new Date().toISOString();
+    }
+
+    orden.estado = nuevoEstado;
 
     orden.tecnico =
         document.getElementById(
@@ -702,4 +833,224 @@ setTimeout(function(){
     ).style.display = "none";
 
 },2000);
+}
+function actualizarEconomia(){
+
+    let facturacion = 0;
+    let gastos = 0;
+    let transportes = 0;
+    let entregadas = 0;
+
+    reparaciones.forEach(function(orden){
+
+        facturacion +=
+            Number(orden.valorReparacion || 0);
+
+        gastos +=
+            Number(orden.gastos || 0);
+
+        transportes +=
+            Number(orden.valorTransporte || 0);
+
+        if(orden.estado === "Entregado"){
+            entregadas++;
+        }
+
+    });
+
+    let ganancia =
+        facturacion - gastos;
+
+    let ticket =
+        entregadas > 0
+        ? Math.round(facturacion / entregadas)
+        : 0;
+
+        let estados= {
+            "Ingresado": 0,
+            "Diagnosticando":0,
+            "Esperando aprobacion":0,
+            "esperando repuesto": 0,
+            "en reparación": 0,
+            "reparado":0,
+            "entregado":0,
+        }
+
+
+reparaciones.forEach(function(orden){
+
+    if(estados[orden.estado] !== undefined){
+
+        estados[orden.estado]++;
+
+    }
+
+});
+
+    document.getElementById(
+        "resumenEconomico"
+    ).innerHTML = `
+        <p><strong>Facturación:</strong> $${facturacion}</p>
+        <p><strong>Gastos:</strong> $${gastos}</p>
+        <p><strong>Ganancia:</strong> $${ganancia}</p>
+        <p><strong>Transportes:</strong> $${transportes}</p>
+    `;
+
+    document.getElementById(
+        "ticketPromedio"
+    ).innerHTML = `
+        <p><strong>Ticket Promedio:</strong> $${ticket}</p>
+    `;
+
+document.getElementById(
+    "resumenEstados"
+).innerHTML = `
+    <p>Ingresado: ${estados["Ingresado"] || 0}</p>
+    <p>Diagnosticando: ${estados["Diagnosticando"] || 0}</p>
+    <p>Esperando aprobación: ${estados["Esperando aprobación"] || 0}</p>
+    <p>Esperando repuesto: ${estados["Esperando repuesto"] || 0}</p>
+    <p>En reparación: ${estados["En reparación"] || 0}</p>
+    <p>Reparado: ${estados["Reparado"] || 0}</p>
+    <p>Entregado: ${estados["Entregado"] || 0}</p>
+    `;
+
+    let meses = {};
+
+reparaciones.forEach(function(orden){
+
+    let fecha = new Date(orden.fecha);
+
+    let clave =
+        fecha.getFullYear() + "-" +
+        String(fecha.getMonth() + 1)
+        .padStart(2,"0");
+
+    if(!meses[clave]){
+
+        meses[clave] = {
+
+            facturacion: 0,
+            gastos: 0,
+            ordenes: 0
+
+        };
+
+    }
+
+    meses[clave].facturacion +=
+        Number(orden.valorReparacion || 0);
+
+    meses[clave].gastos +=
+        Number(orden.gastos || 0);
+
+    meses[clave].ordenes++;
+
+});
+let htmlMeses = "";
+
+Object.keys(meses)
+.sort()
+.reverse()
+.forEach(function(mes){
+
+    let datos = meses[mes];
+
+    let ganancia =
+        datos.facturacion -
+        datos.gastos;
+
+    htmlMeses += `
+
+        <div
+            style="
+                border:1px solid #ccc;
+                padding:10px;
+                margin-bottom:10px;
+                border-radius:8px;
+            "
+        >
+
+            <strong>${mes}</strong>
+
+            <p>
+                Facturación:
+                $${datos.facturacion}
+            </p>
+
+            <p>
+                Gastos:
+                $${datos.gastos}
+            </p>
+
+            <p>
+                Ganancia:
+                $${ganancia}
+            </p>
+
+            <p>
+                Órdenes:
+                ${datos.ordenes}
+            </p>
+
+        </div>
+
+    `;
+
+});
+
+document.getElementById(
+    "desgloseMensual"
+).innerHTML = htmlMeses;
+
+}
+function formatearFecha(fecha){
+
+    if(!fecha) return "Sin fecha";
+
+    let f = new Date(fecha);
+
+    let meses = [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre"
+    ];
+
+    return (
+        f.getDate() +
+        " de " +
+        meses[f.getMonth()] +
+        " de " +
+        f.getFullYear()
+    );
+
+}
+function calcularDias(fechaInicio, fechaFin){
+
+    if(!fechaInicio || !fechaFin){
+        return "-";
+    }
+
+    let inicio = new Date(fechaInicio);
+    let fin = new Date(fechaFin);
+
+    let diferencia =
+        fin - inicio;
+
+    let dias =
+        Math.floor(
+            diferencia /
+            (1000 * 60 * 60 * 24)
+        );
+
+    return dias;
+
 }
