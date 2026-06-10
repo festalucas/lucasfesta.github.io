@@ -126,3 +126,19 @@ input[type="checkbox"]{
     height:20px !important;
     cursor:pointer;
 } 
+#busquedaReparacion{
+
+    width:100%;
+    padding:12px;
+
+    margin-bottom:15px;
+
+    border-radius:8px;
+
+    border:1px solid #ccc;
+
+    box-sizing:border-box;
+
+    font-size:16px;
+
+}
