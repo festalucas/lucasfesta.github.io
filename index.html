@@ -99,13 +99,69 @@
 
     <hr>
 
-    <div id="resultadoOrden"></div>
+    <div id="resultadoOrden"></div> 
 
-</div>
+    </div>
 
-        <div id="reparaciones" class="seccion">
-        <h2>Reparaciones Activas </h2>
-         <table id="tablaReparaciones">
+
+    <div id="reparaciones" class="seccion">
+
+    <h2>Listado de Reparaciones</h2>
+
+    <input
+    type="text"
+    id="busquedaReparacion"
+    placeholder="Buscar por OT, cliente o producto..."
+    onkeyup="actualizarTablaReparaciones()"
+    >
+    
+    <div class="barraFiltros">
+
+        <label>Estado:</label>
+
+        <select
+            id="filtroEstado"
+            onchange="actualizarTablaReparaciones()"
+        >
+            <option>Todos</option>
+            <option>Ingresado</option>
+            <option>Diagnosticando</option>
+            <option>Esperando aprobación</option>
+            <option>Esperando repuesto</option>
+            <option>En reparación</option>
+            <option>Reparado</option>
+            <option>Entregado</option>
+        </select>
+
+    </div>
+
+    <table id="tablaReparaciones">
+
+<div id="reparaciones" class="seccion">
+
+    <h2>Listado de Reparaciones</h2>
+
+    <div class="barraFiltros">
+
+        <label>Estado:</label>
+
+        <select
+            id="filtroEstado"
+            onchange="actualizarTablaReparaciones()"
+        >
+            <option>Todos</option>
+            <option>Ingresado</option>
+            <option>Diagnosticando</option>
+            <option>Esperando aprobación</option>
+            <option>Esperando repuesto</option>
+            <option>En reparación</option>
+            <option>Reparado</option>
+            <option>Entregado</option>
+        </select>
+
+    </div>
+
+    <table id="tablaReparaciones">
 
         <thead>
             <tr>
@@ -117,11 +173,11 @@
         </thead>
 
         <tbody>
-
         </tbody>
 
-        </table>
-        </div>
+    </table>
+
+</div>
 <div id="detalleOrden" class="seccion">
 
     <h2>Detalle de Orden</h2>
@@ -154,13 +210,36 @@
 
     </table>
 
-</div>
 
-</div>        </div>
+
+</div>     
 
        <div id="economia" class="seccion">
 
     <h2>Economía y Backups</h2>
+    <h3>Resumen General</h3>
+
+<div id="resumenEconomico"></div>
+
+<hr>
+
+<h3>Estados de Reparación</h3>
+
+<div id="resumenEstados"></div>
+
+<hr>
+
+<h3>Ticket Promedio</h3>
+
+<div id="ticketPromedio"></div>
+
+<hr>
+
+<h3>Desglose Mensual</h3>
+
+<div id="desgloseMensual"></div>
+
+<hr>
 
     <button onclick="exportarDatos()">
         💾 Exportar Datos
@@ -181,8 +260,6 @@
 </div>
 
     </div>
-
-    <script src="script.js"></script>
     
     <div id="detalleCliente" class="seccion">
 
@@ -190,7 +267,13 @@
 
     <div id="contenidoCliente"></div>
 
-</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="script.js"></script>
+
+
 
 </body>
 </html>
